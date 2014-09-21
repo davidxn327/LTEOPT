@@ -15,7 +15,24 @@ namespace LTEOPT
         public MainForm()
         {
             InitializeComponent();
+
+            if (!System.IO.Directory.Exists(dataDir))
+            {
+                System.IO.Directory.CreateDirectory(dataDir);
+            }
+
+            baseDataSet = new DataSet();
+            if (System.IO.File.Exists(baseFile))
+                baseDataSet.ReadXml(baseFile, XmlReadMode.Auto);
+
+            specDataSet = new DataSet();
+            if (System.IO.File.Exists(specFile))
+                specDataSet.ReadXml(specFile, XmlReadMode.Auto);
         }
+
+        static string dataDir = Application.StartupPath + "/data/";
+        static string baseFile = dataDir + "base.dat";
+        static string specFile = dataDir + "spec.dat";
 
         DataSet baseDataSet;
         DataSet providerDataSet;
@@ -68,6 +85,38 @@ namespace LTEOPT
             return ds;
         }
 
+        private bool CheckAll(DataRow dataRow, DataRow baseRow)
+        {
+            foreach (DataColumn col in baseRow.Table.Columns)
+            {
+                if (dataRow[col.ColumnName] != null)
+                {
+                    // TODO:
+                    if (baseRow[col.ColumnName] != dataRow[col.ColumnName])
+                        return false;
+                }
+            }
+
+            return true;
+        }
+
+        private bool CheckENodes(DataRow dataRow, DataRow baseRow, string enodes)
+        {
+            if(dataRow["xxxxxxxxxxx"].ToString() != enodes)
+                return true;//enodes不一样就不用比了
+            foreach (DataColumn col in baseRow.Table.Columns)
+            {
+                if (dataRow[col.ColumnName] != null)
+                {
+                    // TODO:
+                    if (baseRow[col.ColumnName] != dataRow[col.ColumnName])
+                        return false;
+                }
+            }
+
+            return true;
+        }
+
         //全网数据导入
         private void simpleButton1_Click(object sender, EventArgs e)
         {
@@ -76,6 +125,7 @@ namespace LTEOPT
             {
                 baseDataSet = ExcelToDataSet(ofd.FileName);
             }
+            baseDataSet.WriteXml(baseFile, XmlWriteMode.WriteSchema);
         }
 
         //查看基础数据
@@ -89,26 +139,46 @@ namespace LTEOPT
             }
 
             ShowResult sr = new ShowResult();
-            sr.SetTable(baseDataSet.Tables["MmeAccess"]);
+            sr.DataSource = baseDataSet;
             sr.ShowDialog();
+        }
+
+        //导入全网数据
+        private void simpleButton9_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog ofd = new OpenFileDialog();
+            if (ofd.ShowDialog() == DialogResult.OK)
+            {
+                providerDataSet = ExcelToDataSet(ofd.FileName);
+            }
         }
 
         //全网数据检查
         private void simpleButton2_Click(object sender, EventArgs e)
         {
+            if (baseDataSet == null || providerDataSet == null)
+            {
+                XtraMessageBox.Show("请导入全网数据！",
+                     "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             DataSet ds = new DataSet();
             foreach (DataTable baseTbl in baseDataSet.Tables)
             {
-                DataTable table = providerDataSet.Tables[baseTbl.TableName];
-                if (table != null)
-                {
-                    DataRow[] rows = table.Select("");
+                if (baseTbl.Rows.Count < 1)
+                    continue;
+                DataRow baseRow = baseTbl.Rows[0];
 
-                    DataTable dt = table.Clone();
+                DataTable cmpTable = providerDataSet.Tables[baseTbl.TableName];
+                if (cmpTable != null)
+                {
+                    DataTable dt = cmpTable.Clone();
                     ds.Tables.Add(dt);
-                    for (int i = 0; i < rows.Length; i++)
+                    for (int i = 0; i < cmpTable.Rows.Count; i++)
                     {
-                        dt.ImportRow(rows[i]);
+                        if (!CheckAll(cmpTable.Rows[i], baseRow))
+                            dt.ImportRow(cmpTable.Rows[i]);
                     }
                 }
 
@@ -122,19 +192,37 @@ namespace LTEOPT
         //单个eNodes参数检查
         private void simpleButton3_Click(object sender, EventArgs e)
         {
+            if (string.IsNullOrEmpty(comboBoxEdit1.Text))
+            {
+                XtraMessageBox.Show("请输入eNodes！",
+                    "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            string enodes = comboBoxEdit1.Text;
+
+            if (baseDataSet == null || providerDataSet == null)
+            {
+                XtraMessageBox.Show("请导入全网数据！",
+                     "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             DataSet ds = new DataSet();
             foreach (DataTable baseTbl in baseDataSet.Tables)
             {
-                DataTable table = providerDataSet.Tables[baseTbl.TableName];
-                if (table != null)
-                {
-                    DataRow[] rows = table.Select("");
+                if (baseTbl.Rows.Count < 1)
+                    continue;
+                DataRow baseRow = baseTbl.Rows[0];
 
-                    DataTable dt = table.Clone();
+                DataTable cmpTable = providerDataSet.Tables[baseTbl.TableName];
+                if (cmpTable != null)
+                {
+                    DataTable dt = cmpTable.Clone();
                     ds.Tables.Add(dt);
-                    for (int i = 0; i < rows.Length; i++)
+                    for (int i = 0; i < cmpTable.Rows.Count; i++)
                     {
-                        dt.ImportRow(rows[i]);
+                        if (!CheckENodes(cmpTable.Rows[i], baseRow, enodes))
+                            dt.ImportRow(cmpTable.Rows[i]);
                     }
                 }
 
@@ -142,7 +230,6 @@ namespace LTEOPT
 
             ShowResult sr = new ShowResult();
             sr.DataSource = ds;
-            sr.Text = "";
             sr.ShowDialog();
         }
 
@@ -169,8 +256,6 @@ namespace LTEOPT
         {
 
         }
-
-
 
     }
 }
