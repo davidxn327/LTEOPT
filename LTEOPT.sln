@@ -1,18 +1,18 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LTEOPT", "LTEOPT\LTEOPT.csproj", "{2EB3712A-165D-49C5-ADD1-04D921A96147}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LTEOPT", "LTEOPT\LTEOPT.csproj", "{B9603327-7A4B-470B-A9AD-2CD460D4A401}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|x86 = Debug|x86
-		Release|x86 = Release|x86
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{2EB3712A-165D-49C5-ADD1-04D921A96147}.Debug|x86.ActiveCfg = Debug|x86
-		{2EB3712A-165D-49C5-ADD1-04D921A96147}.Debug|x86.Build.0 = Debug|x86
-		{2EB3712A-165D-49C5-ADD1-04D921A96147}.Release|x86.ActiveCfg = Release|x86
-		{2EB3712A-165D-49C5-ADD1-04D921A96147}.Release|x86.Build.0 = Release|x86
+		{B9603327-7A4B-470B-A9AD-2CD460D4A401}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B9603327-7A4B-470B-A9AD-2CD460D4A401}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B9603327-7A4B-470B-A9AD-2CD460D4A401}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B9603327-7A4B-470B-A9AD-2CD460D4A401}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

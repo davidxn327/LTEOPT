@@ -5,41 +5,101 @@ using System.Data;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
+using DevExpress.Skins;
+using DevExpress.LookAndFeel;
+using DevExpress.UserSkins;
 using DevExpress.XtraEditors;
 using Aspose.Cells;
+using DevExpress.XtraTab;
+using DevExpress.XtraGrid;
 
-namespace LTEOPT
+
+namespace WindowsApplication1
 {
-    public partial class MainForm : DevExpress.XtraEditors.XtraForm
+    public partial class MainForm : XtraForm
     {
+        string data_path = Application.StartupPath + "/data/";
+
+        DataSet qwBase;//全网基准参数
+        DataSet qwDataSet;//全网数据
+
+        DataSet qhBase;//切换优先基准
+        DataSet qhDataSet;//切换优先数据
+
+        DataSet slBase;//速率优先基准
+        DataSet slDataSet;//速率优先数据
+
         public MainForm()
         {
             InitializeComponent();
 
-            if (!System.IO.Directory.Exists(dataDir))
-            {
-                System.IO.Directory.CreateDirectory(dataDir);
-            }
+            //ImportBase();
 
-            baseDataSet = new DataSet();
-            if (System.IO.File.Exists(baseFile))
-                baseDataSet.ReadXml(baseFile, XmlReadMode.Auto);
+            InitTab();
 
-            specDataSet = new DataSet();
-            if (System.IO.File.Exists(specFile))
-                specDataSet.ReadXml(specFile, XmlReadMode.Auto);
+            qwBase = new DataSet();
+            qwBase.ReadXml(data_path + "huawei_qwBase.dat");
+
+            qhBase = new DataSet();
+            qhBase.ReadXml(data_path + "huawei_qhBase.dat");
+
+        }
+        void InitTab()
+        {
+            pages = new Dictionary<string, XtraTabPage>();
+            pages.Add("all", xtraTabPage1);
+            pages.Add("handoff", xtraTabPage2);
+            pages.Add("rate", xtraTabPage3);
+
+            grids = new Dictionary<string, GridControl>();
+            grids.Add("all", gridControl);
+            grids.Add("handoff", gridControl1);
+            grids.Add("rate", gridControl2);
+
+            combos = new Dictionary<string, ComboBoxEdit>();
+            combos.Add("all", comboBoxEdit1);
+            combos.Add("handoff", comboBoxEdit2);
+            combos.Add("rate", comboBoxEdit3);
         }
 
-        static string dataDir = Application.StartupPath + "/data/";
-        static string baseFile = dataDir + "base.dat";
-        static string specFile = dataDir + "spec.dat";
+        Dictionary<string, XtraTabPage> pages;
+        Dictionary<string, GridControl> grids;
+        //Dictionary<string, DataGridView> views;
+        Dictionary<string, ComboBoxEdit> combos;
+        //切换Tab页面
+        void SwitchPage(string page)
+        {
+            // TODO：
+            xtraTabControl1.SelectedTabPage = pages[page];
+        }
 
-        DataSet baseDataSet;
-        DataSet providerDataSet;
+        //tab页面显示数据
+        void ShowDataSet(string page, DataSet ds)
+        {
+            if (ds == null || ds.Tables.Count == 0)
+                return;
 
-        DataSet specDataSet;
-        DataSet switchDataSet;
-        DataSet rateDataSet;
+            //下拉框填充表名
+            combos[page].Properties.Items.Clear();
+            foreach (DataTable item in ds.Tables)
+            {
+                combos[page].Properties.Items.Add(item.TableName);
+            }
+            string firstTableName = ds.Tables[0].TableName;
+
+            //绑定数据源
+            grids[page].Tag = ds;
+
+            //grids[page].DataSource = null;
+            //grids[page].RefreshDataSource();
+
+            (grids[page].MainView as DevExpress.XtraGrid.Views.Grid.GridView).Columns.Clear(); 
+            grids[page].DataSource = ds.Tables[0];
+            grids[page].MainView.RefreshData();
+
+            //切换页面
+            xtraTabControl1.SelectedTabPage = pages[page];
+        }
 
         DataSet ExcelToDataSet(string excelfile)
         {
@@ -85,24 +145,43 @@ namespace LTEOPT
             return ds;
         }
 
+        void ImportBase()
+        {
+            string man = "huawei";
+
+            qwBase = ExcelToDataSet(data_path + "LTE参数_20140702-基准.xlsx");
+            qwBase.WriteXml(data_path +man+ "_qwBase.dat", XmlWriteMode.WriteSchema);
+
+            qhBase = ExcelToDataSet(data_path + "异厂家切换相关参数及功能开关-ALU-基准.xlsx");
+            qhBase.WriteXml(data_path + man + "_qhBase.dat", XmlWriteMode.WriteSchema);
+
+            //slBase = ExcelToDataSet(data_path +"速率基准");
+            //slBase.WriteXml(data_path + man + "_slBase.dat", XmlWriteMode.WriteSchema);
+        }
+
+        //检查全部数据
         private bool CheckAll(DataRow dataRow, DataRow baseRow)
         {
+            bool flag = true;
             foreach (DataColumn col in baseRow.Table.Columns)
             {
-                if (dataRow[col.ColumnName] != null)
+                if ( col.ColumnName!="ENBEquipment" && dataRow[col.ColumnName] != null)
                 {
-                    // TODO:
+                    // TODO: 1.n选1  2.区间  3.整体匹配     1,3可以组合；区间内没有分号
                     if (baseRow[col.ColumnName] != dataRow[col.ColumnName])
-                        return false;
+                    {
+                        dataRow.RowError += col.ColumnName+";";
+                        flag = false;
+                    }
                 }
             }
 
-            return true;
+            return flag;
         }
 
         private bool CheckENodes(DataRow dataRow, DataRow baseRow, string enodes)
         {
-            if(dataRow["xxxxxxxxxxx"].ToString() != enodes)
+            if (dataRow["xxxxxxxxxxx"].ToString() != enodes)
                 return true;//enodes不一样就不用比了
             foreach (DataColumn col in baseRow.Table.Columns)
             {
@@ -117,46 +196,24 @@ namespace LTEOPT
             return true;
         }
 
-        //全网数据导入
-        private void simpleButton1_Click(object sender, EventArgs e)
-        {
-            OpenFileDialog ofd = new OpenFileDialog();
-            if (ofd.ShowDialog()==DialogResult.OK)
-            {
-                baseDataSet = ExcelToDataSet(ofd.FileName);
-            }
-            baseDataSet.WriteXml(baseFile, XmlWriteMode.WriteSchema);
-        }
-
-        //查看基础数据
-        private void simpleButton4_Click(object sender, EventArgs e)
-        {
-            if (baseDataSet == null)
-            {
-                XtraMessageBox.Show("请先导入全网基础数据！",
-                    "警告",MessageBoxButtons.OK,MessageBoxIcon.Warning);
-                return;
-            }
-
-            ShowResult sr = new ShowResult();
-            sr.DataSource = baseDataSet;
-            sr.ShowDialog();
-        }
-
         //导入全网数据
-        private void simpleButton9_Click(object sender, EventArgs e)
+        private void inboxItem_LinkClicked(object sender, DevExpress.XtraNavBar.NavBarLinkEventArgs e)
         {
             OpenFileDialog ofd = new OpenFileDialog();
             if (ofd.ShowDialog() == DialogResult.OK)
             {
-                providerDataSet = ExcelToDataSet(ofd.FileName);
+                string xls = ofd.FileName;
+                qwDataSet = ExcelToDataSet(xls);
+
+                //把结果显示在tab页中
+                ShowDataSet("all", qwDataSet);
             }
         }
 
-        //全网数据检查
-        private void simpleButton2_Click(object sender, EventArgs e)
+        //全网参数核查
+        private void outboxItem_LinkClicked(object sender, DevExpress.XtraNavBar.NavBarLinkEventArgs e)
         {
-            if (baseDataSet == null || providerDataSet == null)
+            if (qwDataSet == null || qwBase ==null)
             {
                 XtraMessageBox.Show("请导入全网数据！",
                      "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -164,13 +221,13 @@ namespace LTEOPT
             }
 
             DataSet ds = new DataSet();
-            foreach (DataTable baseTbl in baseDataSet.Tables)
+            foreach (DataTable baseTbl in qwBase.Tables)
             {
                 if (baseTbl.Rows.Count < 1)
                     continue;
                 DataRow baseRow = baseTbl.Rows[0];
 
-                DataTable cmpTable = providerDataSet.Tables[baseTbl.TableName];
+                DataTable cmpTable = qwDataSet.Tables[baseTbl.TableName];
                 if (cmpTable != null)
                 {
                     DataTable dt = cmpTable.Clone();
@@ -184,14 +241,15 @@ namespace LTEOPT
 
             }
 
-            ShowResult sr = new ShowResult();
-            sr.DataSource = ds;
-            sr.ShowDialog();
+            //显示核查结果
+            ShowDataSet("all", ds);
+
         }
 
-        //单个eNodes参数检查
-        private void simpleButton3_Click(object sender, EventArgs e)
+        //单个eNodeB参数核查
+        private void navBarItem5_LinkClicked(object sender, DevExpress.XtraNavBar.NavBarLinkEventArgs e)
         {
+            // 获取需要核查的eNodeB
             if (string.IsNullOrEmpty(comboBoxEdit1.Text))
             {
                 XtraMessageBox.Show("请输入eNodes！",
@@ -200,7 +258,8 @@ namespace LTEOPT
             }
             string enodes = comboBoxEdit1.Text;
 
-            if (baseDataSet == null || providerDataSet == null)
+
+            if (qwBase == null || qwDataSet == null)
             {
                 XtraMessageBox.Show("请导入全网数据！",
                      "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -208,13 +267,13 @@ namespace LTEOPT
             }
 
             DataSet ds = new DataSet();
-            foreach (DataTable baseTbl in baseDataSet.Tables)
+            foreach (DataTable baseTbl in qwBase.Tables)
             {
                 if (baseTbl.Rows.Count < 1)
                     continue;
                 DataRow baseRow = baseTbl.Rows[0];
 
-                DataTable cmpTable = providerDataSet.Tables[baseTbl.TableName];
+                DataTable cmpTable = qwDataSet.Tables[baseTbl.TableName];
                 if (cmpTable != null)
                 {
                     DataTable dt = cmpTable.Clone();
@@ -228,33 +287,118 @@ namespace LTEOPT
 
             }
 
-            ShowResult sr = new ShowResult();
-            sr.DataSource = ds;
-            sr.ShowDialog();
+            //显示核查结果
+            ShowDataSet("all", ds);
         }
 
-        //特殊场景导入
-        private void simpleButton5_Click(object sender, EventArgs e)
+        //导入切换优先数据
+        private void navBarItem1_LinkClicked(object sender, DevExpress.XtraNavBar.NavBarLinkEventArgs e)
         {
+            OpenFileDialog ofd = new OpenFileDialog();
+            if (ofd.ShowDialog() == DialogResult.OK)
+            {
+                string xls = ofd.FileName;
+                qhDataSet = ExcelToDataSet(xls);
 
+                //把结果显示在tab页中
+                ShowDataSet("handoff", qhDataSet);
+            }
         }
 
-        //特殊场景基础数据查看
-        private void simpleButton6_Click(object sender, EventArgs e)
+        //切换优先核查
+        private void navBarItem2_LinkClicked(object sender, DevExpress.XtraNavBar.NavBarLinkEventArgs e)
         {
+            if (qhDataSet == null || qhBase == null)
+            {
+                XtraMessageBox.Show("请导入切换优先场景数据！",
+                     "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
 
+            DataSet ds = new DataSet();
+            foreach (DataTable baseTbl in qhBase.Tables)
+            {
+                if (baseTbl.Rows.Count < 1)
+                    continue;
+                DataRow baseRow = baseTbl.Rows[0];
+
+                DataTable cmpTable = qhDataSet.Tables[baseTbl.TableName];
+                if (cmpTable != null)
+                {
+                    DataTable dt = baseTbl.Clone();
+                    ds.Tables.Add(dt);
+                    for (int i = 0; i < cmpTable.Rows.Count; i++)
+                    {
+                        if (!CheckAll(cmpTable.Rows[i], baseRow))
+                            dt.ImportRow(cmpTable.Rows[i]);
+                    }
+                }
+
+            }
+
+            //显示核查结果
+            ShowDataSet("handoff", ds);
         }
 
-        //切换优先场景
-        private void simpleButton7_Click(object sender, EventArgs e)
+        //导入速率优先数据
+        private void navBarItem3_LinkClicked(object sender, DevExpress.XtraNavBar.NavBarLinkEventArgs e)
         {
+            OpenFileDialog ofd = new OpenFileDialog();
+            if (ofd.ShowDialog() == DialogResult.OK)
+            {
+                string xls = ofd.FileName;
+                slDataSet = ExcelToDataSet(xls);
 
+                //把结果显示在tab页中
+                ShowDataSet("rate", qhDataSet);
+            }
         }
 
-        //速率优先场景
-        private void simpleButton8_Click(object sender, EventArgs e)
+        //速率优先核查
+        private void navBarItem4_LinkClicked(object sender, DevExpress.XtraNavBar.NavBarLinkEventArgs e)
         {
+            if (slDataSet == null || slBase == null)
+            {
+                XtraMessageBox.Show("请导入速率优先场景数据！",
+                     "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
 
+            DataSet ds = new DataSet();
+            foreach (DataTable baseTbl in slBase.Tables)
+            {
+                if (baseTbl.Rows.Count < 1)
+                    continue;
+                DataRow baseRow = baseTbl.Rows[0];
+
+                DataTable cmpTable = slDataSet.Tables[baseTbl.TableName];
+                if (cmpTable != null)
+                {
+                    DataTable dt = baseTbl.Clone();
+                    ds.Tables.Add(dt);
+                    for (int i = 0; i < cmpTable.Rows.Count; i++)
+                    {
+                        if (!CheckAll(cmpTable.Rows[i], baseRow))
+                            dt.ImportRow(cmpTable.Rows[i]);
+                    }
+                }
+
+            }
+
+            //显示核查结果
+            ShowDataSet("rate", ds);
+        }
+
+        //全网列表
+        private void comboBoxEdit1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            string cn = comboBoxEdit1.Text;
+            DataSet ds = grids["all"].Tag as DataSet;
+
+            (grids["all"].MainView as DevExpress.XtraGrid.Views.Grid.GridView).Columns.Clear(); 
+            grids["all"].DataSource = ds.Tables[cn];
+            grids["all"].RefreshDataSource();
+            grids["all"].MainView.RefreshData();
         }
 
     }

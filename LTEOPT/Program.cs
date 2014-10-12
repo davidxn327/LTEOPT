@@ -1,28 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
+using DevExpress.LookAndFeel;
 
-namespace LTEOPT
+namespace WindowsApplication1
 {
     static class Program
     {
         /// <summary>
-        /// 应用程序的主入口点。
+        /// The main entry point for the application.
         /// </summary>
         [STAThread]
         static void Main()
         {
-            System.Threading.Thread.CurrentThread.CurrentUICulture = new System.Globalization.CultureInfo("zh-CHS");
-
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
             DevExpress.Skins.SkinManager.EnableFormSkins();
+            DevExpress.UserSkins.OfficeSkins.Register();
             DevExpress.UserSkins.BonusSkins.Register();
-            DevExpress.LookAndFeel.UserLookAndFeel.Default.SetSkinStyle("Money Twins");
+            UserLookAndFeel.Default.SetSkinStyle("DevExpress Style");
 
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainForm());
         }
     }
