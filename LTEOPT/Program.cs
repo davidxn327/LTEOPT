@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Windows.Forms;
 using DevExpress.LookAndFeel;
 
-namespace WindowsApplication1
+namespace LTEOPT
 {
     static class Program
     {
@@ -21,7 +21,11 @@ namespace WindowsApplication1
             DevExpress.UserSkins.BonusSkins.Register();
             UserLookAndFeel.Default.SetSkinStyle("DevExpress Style");
 
-            Application.Run(new MainForm());
+            LoginForm login = new LoginForm();
+            if (login.ShowDialog() == DialogResult.OK)
+            {
+                Application.Run(new MainForm(login.manufacturer));
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace WindowsApplication1
+﻿namespace LTEOPT
 {
     partial class MainForm
     {
@@ -326,7 +326,8 @@
             this.simpleButton2.Size = new System.Drawing.Size(89, 22);
             this.simpleButton2.StyleController = this.layoutControl1;
             this.simpleButton2.TabIndex = 6;
-            this.simpleButton2.Text = "simpleButton2";
+            this.simpleButton2.Text = "导出所有";
+            this.simpleButton2.Click += new System.EventHandler(this.simpleButton2_Click);
             // 
             // simpleButton1
             // 
@@ -335,7 +336,8 @@
             this.simpleButton1.Size = new System.Drawing.Size(89, 22);
             this.simpleButton1.StyleController = this.layoutControl1;
             this.simpleButton1.TabIndex = 5;
-            this.simpleButton1.Text = "simpleButton1";
+            this.simpleButton1.Text = "导出Excel";
+            this.simpleButton1.Click += new System.EventHandler(this.simpleButton1_Click);
             // 
             // comboBoxEdit1
             // 
@@ -344,6 +346,7 @@
             this.comboBoxEdit1.Name = "comboBoxEdit1";
             this.comboBoxEdit1.Properties.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] {
             new DevExpress.XtraEditors.Controls.EditorButton(DevExpress.XtraEditors.Controls.ButtonPredefines.Combo)});
+            this.comboBoxEdit1.Properties.TextEditStyle = DevExpress.XtraEditors.Controls.TextEditStyles.DisableTextEditor;
             this.comboBoxEdit1.Size = new System.Drawing.Size(236, 21);
             this.comboBoxEdit1.StyleController = this.layoutControl1;
             this.comboBoxEdit1.TabIndex = 4;
@@ -499,6 +502,7 @@
             this.gridView1.Name = "gridView1";
             this.gridView1.OptionsView.ColumnAutoWidth = false;
             this.gridView1.OptionsView.ShowGroupPanel = false;
+            this.gridView1.RowCellStyle += new DevExpress.XtraGrid.Views.Grid.RowCellStyleEventHandler(this.gridView1_RowCellStyle);
             // 
             // layoutControlGroup1
             // 
@@ -544,12 +548,15 @@
             // emptySpaceItem1
             // 
             this.emptySpaceItem1.AllowHotTrack = false;
+            this.emptySpaceItem1.AppearanceItemCaption.Options.UseTextOptions = true;
+            this.emptySpaceItem1.AppearanceItemCaption.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Center;
             this.emptySpaceItem1.CustomizationFormText = "emptySpaceItem1";
             this.emptySpaceItem1.Location = new System.Drawing.Point(426, 0);
             this.emptySpaceItem1.Name = "emptySpaceItem1";
             this.emptySpaceItem1.Size = new System.Drawing.Size(316, 26);
-            this.emptySpaceItem1.Text = "emptySpaceItem1";
+            this.emptySpaceItem1.Text = "  ";
             this.emptySpaceItem1.TextSize = new System.Drawing.Size(0, 0);
+            this.emptySpaceItem1.TextVisible = true;
             // 
             // layoutControlItem3
             // 
@@ -609,7 +616,8 @@
             this.simpleButton6.Size = new System.Drawing.Size(89, 22);
             this.simpleButton6.StyleController = this.layoutControl2;
             this.simpleButton6.TabIndex = 6;
-            this.simpleButton6.Text = "simpleButton6";
+            this.simpleButton6.Text = "导出所有";
+            this.simpleButton6.Click += new System.EventHandler(this.simpleButton6_Click);
             // 
             // simpleButton5
             // 
@@ -618,7 +626,8 @@
             this.simpleButton5.Size = new System.Drawing.Size(89, 22);
             this.simpleButton5.StyleController = this.layoutControl2;
             this.simpleButton5.TabIndex = 5;
-            this.simpleButton5.Text = "simpleButton5";
+            this.simpleButton5.Text = "导出Excel";
+            this.simpleButton5.Click += new System.EventHandler(this.simpleButton5_Click);
             // 
             // comboBoxEdit2
             // 
@@ -627,9 +636,11 @@
             this.comboBoxEdit2.Name = "comboBoxEdit2";
             this.comboBoxEdit2.Properties.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] {
             new DevExpress.XtraEditors.Controls.EditorButton(DevExpress.XtraEditors.Controls.ButtonPredefines.Combo)});
+            this.comboBoxEdit2.Properties.TextEditStyle = DevExpress.XtraEditors.Controls.TextEditStyles.DisableTextEditor;
             this.comboBoxEdit2.Size = new System.Drawing.Size(236, 21);
             this.comboBoxEdit2.StyleController = this.layoutControl2;
             this.comboBoxEdit2.TabIndex = 4;
+            this.comboBoxEdit2.SelectedIndexChanged += new System.EventHandler(this.comboBoxEdit2_SelectedIndexChanged);
             // 
             // gridControl1
             // 
@@ -692,12 +703,15 @@
             // emptySpaceItem2
             // 
             this.emptySpaceItem2.AllowHotTrack = false;
+            this.emptySpaceItem2.AppearanceItemCaption.Options.UseTextOptions = true;
+            this.emptySpaceItem2.AppearanceItemCaption.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Center;
             this.emptySpaceItem2.CustomizationFormText = "emptySpaceItem2";
             this.emptySpaceItem2.Location = new System.Drawing.Point(426, 0);
             this.emptySpaceItem2.Name = "emptySpaceItem2";
             this.emptySpaceItem2.Size = new System.Drawing.Size(316, 26);
-            this.emptySpaceItem2.Text = "emptySpaceItem2";
+            this.emptySpaceItem2.Text = "   ";
             this.emptySpaceItem2.TextSize = new System.Drawing.Size(0, 0);
+            this.emptySpaceItem2.TextVisible = true;
             // 
             // layoutControlItem11
             // 
@@ -757,7 +771,8 @@
             this.simpleButton4.Size = new System.Drawing.Size(89, 22);
             this.simpleButton4.StyleController = this.layoutControl3;
             this.simpleButton4.TabIndex = 6;
-            this.simpleButton4.Text = "simpleButton4";
+            this.simpleButton4.Text = "导出所有";
+            this.simpleButton4.Click += new System.EventHandler(this.simpleButton4_Click);
             // 
             // simpleButton3
             // 
@@ -766,7 +781,8 @@
             this.simpleButton3.Size = new System.Drawing.Size(89, 22);
             this.simpleButton3.StyleController = this.layoutControl3;
             this.simpleButton3.TabIndex = 5;
-            this.simpleButton3.Text = "simpleButton3";
+            this.simpleButton3.Text = "导出Excel";
+            this.simpleButton3.Click += new System.EventHandler(this.simpleButton3_Click);
             // 
             // comboBoxEdit3
             // 
@@ -775,9 +791,11 @@
             this.comboBoxEdit3.Name = "comboBoxEdit3";
             this.comboBoxEdit3.Properties.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] {
             new DevExpress.XtraEditors.Controls.EditorButton(DevExpress.XtraEditors.Controls.ButtonPredefines.Combo)});
+            this.comboBoxEdit3.Properties.TextEditStyle = DevExpress.XtraEditors.Controls.TextEditStyles.DisableTextEditor;
             this.comboBoxEdit3.Size = new System.Drawing.Size(236, 21);
             this.comboBoxEdit3.StyleController = this.layoutControl3;
             this.comboBoxEdit3.TabIndex = 4;
+            this.comboBoxEdit3.SelectedIndexChanged += new System.EventHandler(this.comboBoxEdit3_SelectedIndexChanged);
             // 
             // gridControl2
             // 
@@ -840,12 +858,15 @@
             // emptySpaceItem3
             // 
             this.emptySpaceItem3.AllowHotTrack = false;
+            this.emptySpaceItem3.AppearanceItemCaption.Options.UseTextOptions = true;
+            this.emptySpaceItem3.AppearanceItemCaption.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Center;
             this.emptySpaceItem3.CustomizationFormText = "emptySpaceItem3";
             this.emptySpaceItem3.Location = new System.Drawing.Point(426, 0);
             this.emptySpaceItem3.Name = "emptySpaceItem3";
             this.emptySpaceItem3.Size = new System.Drawing.Size(316, 26);
-            this.emptySpaceItem3.Text = "emptySpaceItem3";
+            this.emptySpaceItem3.Text = "   ";
             this.emptySpaceItem3.TextSize = new System.Drawing.Size(0, 0);
+            this.emptySpaceItem3.TextVisible = true;
             // 
             // layoutControlItem9
             // 

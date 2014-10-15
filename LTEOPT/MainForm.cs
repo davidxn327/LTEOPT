@@ -14,10 +14,11 @@ using DevExpress.XtraTab;
 using DevExpress.XtraGrid;
 
 
-namespace WindowsApplication1
+namespace LTEOPT
 {
     public partial class MainForm : XtraForm
     {
+        public string manufacturer = "huawei";
         string data_path = Application.StartupPath + "/data/";
 
         DataSet qwBase;//全网基准参数
@@ -32,18 +33,28 @@ namespace WindowsApplication1
         public MainForm()
         {
             InitializeComponent();
+        }
 
+        public MainForm(string man)
+        {
+            InitializeComponent();
+
+            manufacturer = man;
             //ImportBase();
 
             InitTab();
 
             qwBase = new DataSet();
-            qwBase.ReadXml(data_path + "huawei_qwBase.dat");
+            qwBase.ReadXml(data_path + man + "_qwBase.dat");
 
             qhBase = new DataSet();
-            qhBase.ReadXml(data_path + "huawei_qhBase.dat");
+            qhBase.ReadXml(data_path + man + "_qhBase.dat");
+
+            //slBase = new DataSet();
+            //slBase.ReadXml(data_path + man + "_slBase.dat");
 
         }
+
         void InitTab()
         {
             pages = new Dictionary<string, XtraTabPage>();
@@ -51,21 +62,33 @@ namespace WindowsApplication1
             pages.Add("handoff", xtraTabPage2);
             pages.Add("rate", xtraTabPage3);
 
-            grids = new Dictionary<string, GridControl>();
-            grids.Add("all", gridControl);
-            grids.Add("handoff", gridControl1);
-            grids.Add("rate", gridControl2);
+            //grids = new Dictionary<string, GridControl>();
+            //grids.Add("all", gridControl);
+            //grids.Add("handoff", gridControl1);
+            //grids.Add("rate", gridControl2);
+
+            views = new Dictionary<string, DevExpress.XtraGrid.Views.Grid.GridView>();
+            views.Add("all", gridView1);
+            views.Add("handoff", gridView2);
+            views.Add("rate", gridView3);
 
             combos = new Dictionary<string, ComboBoxEdit>();
             combos.Add("all", comboBoxEdit1);
             combos.Add("handoff", comboBoxEdit2);
             combos.Add("rate", comboBoxEdit3);
+
+            emptyitems = new Dictionary<string, DevExpress.XtraLayout.EmptySpaceItem>();
+            emptyitems.Add("all", emptySpaceItem1);
+            emptyitems.Add("handoff", emptySpaceItem2);
+            emptyitems.Add("rate", emptySpaceItem3);
         }
 
         Dictionary<string, XtraTabPage> pages;
-        Dictionary<string, GridControl> grids;
-        //Dictionary<string, DataGridView> views;
+        //Dictionary<string, GridControl> grids;
+        Dictionary<string, DevExpress.XtraGrid.Views.Grid.GridView> views;
         Dictionary<string, ComboBoxEdit> combos;
+        Dictionary<string, DevExpress.XtraLayout.EmptySpaceItem> emptyitems;
+
         //切换Tab页面
         void SwitchPage(string page)
         {
@@ -79,36 +102,48 @@ namespace WindowsApplication1
             if (ds == null || ds.Tables.Count == 0)
                 return;
 
+            //绑定数据源
+            views[page].Tag = ds;
+            //views[page].Columns.Clear();
+            //views[page].GridControl.DataSource = ds.Tables[0];
+            //views[page].RefreshData();
+
+            //显示统计结果
+            emptyitems[page].Text = ds.DataSetName;
+
             //下拉框填充表名
             combos[page].Properties.Items.Clear();
             foreach (DataTable item in ds.Tables)
             {
                 combos[page].Properties.Items.Add(item.TableName);
             }
-            string firstTableName = ds.Tables[0].TableName;
-
-            //绑定数据源
-            grids[page].Tag = ds;
-
-            //grids[page].DataSource = null;
-            //grids[page].RefreshDataSource();
-
-            (grids[page].MainView as DevExpress.XtraGrid.Views.Grid.GridView).Columns.Clear(); 
-            grids[page].DataSource = ds.Tables[0];
-            grids[page].MainView.RefreshData();
+            //string firstTableName = ds.Tables[0].TableName;
+            combos[page].SelectedIndex = 0;
 
             //切换页面
             xtraTabControl1.SelectedTabPage = pages[page];
         }
 
+        void ChangeTable(string page, string tablename)
+        {
+            DataSet ds = views[page].Tag as DataSet;
+
+            views[page].Columns.Clear();
+            views[page].GridControl.DataSource = ds.Tables[tablename];
+            views[page].RefreshData();
+        }
+
         DataSet ExcelToDataSet(string excelfile)
         {
-            DataSet ds = new DataSet();
+            DataSet ds = new DataSet("   ");
 
             try
             {
                 Workbook book = new Workbook();
                 book.Open(excelfile);
+
+                int titleRowIndex = 0;
+                int firstRowIndex = 1;
 
                 foreach (Worksheet sheet in book.Worksheets)
                 {
@@ -122,9 +157,9 @@ namespace WindowsApplication1
 
                         for (int i = 0; i < cellCount; i++)
                         {
-                            dt.Columns.Add(cells[0, i].StringValue);
+                            dt.Columns.Add(cells[titleRowIndex, i].StringValue);
                         }
-                        cells.ExportDataTable(dt, 1, 0, rowCount - 1, false, true);
+                        cells.ExportDataTable(dt, firstRowIndex, 0, rowCount - 1, false, true);
 
                         //cells.ExportDataTable(dt, 0, 0, rowCount, true, true);
 
@@ -159,41 +194,122 @@ namespace WindowsApplication1
             //slBase.WriteXml(data_path + man + "_slBase.dat", XmlWriteMode.WriteSchema);
         }
 
-        //检查全部数据
-        private bool CheckAll(DataRow dataRow, DataRow baseRow)
+        //检查DataSet
+        DataSet CheckDataSet(DataSet base_ds, DataSet cmp_ds, string single = null)
         {
-            bool flag = true;
-            foreach (DataColumn col in baseRow.Table.Columns)
+            DataSet ds = new DataSet();
+            int totalRow = 0;
+            int totalCell = 0;
+            int errRow = 0;
+            int errCell = 0;
+            foreach (DataTable baseTbl in base_ds.Tables)
             {
-                if ( col.ColumnName!="ENBEquipment" && dataRow[col.ColumnName] != null)
+                if (baseTbl.Rows.Count < 1)
+                    continue;
+
+                DataRow baseRow = baseTbl.Rows[0];
+                DataTable cmpTable = cmp_ds.Tables[baseTbl.TableName];
+                if (cmpTable != null)
                 {
-                    // TODO: 1.n选1  2.区间  3.整体匹配     1,3可以组合；区间内没有分号
-                    if (baseRow[col.ColumnName] != dataRow[col.ColumnName])
+                    DataTable dt = baseTbl.Copy();
+                    ds.Tables.Add(dt);
+                    for (int i = 0; i < cmpTable.Rows.Count; i++)
                     {
-                        dataRow.RowError += col.ColumnName+";";
-                        flag = false;
+                        int errcnt;
+                        if (single != null)
+                        {
+                            errcnt = CheckENodes(cmpTable.Rows[i], baseRow, single);
+                        }
+                        else
+                        {
+                            errcnt = CheckAll(cmpTable.Rows[i], baseRow);
+                        }
+
+                        if (errcnt > 0)
+                        {
+                            dt.ImportRow(cmpTable.Rows[i]);
+                            errRow++;
+                            errCell += errcnt;
+                        }
+
                     }
                 }
-            }
 
-            return flag;
+                totalRow += cmpTable.Rows.Count;
+                totalCell += totalRow * baseTbl.Columns.Count;
+            }
+            ds.DataSetName = string.Format("共检查{0}行，有{1}行不匹配；共{2}个字段，有{3}个不匹配。", totalRow, errRow, totalCell, errCell);
+
+            return ds;
         }
 
-        private bool CheckENodes(DataRow dataRow, DataRow baseRow, string enodes)
+        //检查全部数据
+        private int CheckAll(DataRow dataRow, DataRow baseRow)
         {
-            if (dataRow["xxxxxxxxxxx"].ToString() != enodes)
-                return true;//enodes不一样就不用比了
+            bool flag = false;
+            int err = 0;
             foreach (DataColumn col in baseRow.Table.Columns)
             {
-                if (dataRow[col.ColumnName] != null)
+                if (col.ColumnName != "ENBEquipment" && dataRow[col.ColumnName] != null)
                 {
-                    // TODO:
-                    if (baseRow[col.ColumnName] != dataRow[col.ColumnName])
-                        return false;
+                    // TODO: 1.n选1  2.区间  3.整体匹配     1,3可以组合；区间内没有分号
+                    string baseStr = baseRow[col.ColumnName].ToString();
+                    string cmpStr = dataRow[col.ColumnName].ToString();
+                    if (baseStr.Contains("]"))
+                    {
+                        string pattern = @"^\[(\d)[,，](\d)\]$";
+                        System.Text.RegularExpressions.Regex reg = new System.Text.RegularExpressions.Regex(pattern);
+                        var match = reg.Match(baseStr);
+                        if (match.Success)
+                        {
+                            double n1 = double.Parse(match.Groups[1].Value);
+                            double n2 = double.Parse(match.Groups[2].Value);
+                            double n = double.Parse(cmpStr);
+                            if (n >= n1 && n <= n2)
+                            {
+                                flag = true;
+                            }
+                            else
+                            {
+                                err++;
+                                dataRow.RowError += col.ColumnName + ";";
+                            }
+                        }
+                    }
+                    else
+                    {
+                        string[] options = baseStr.Split(';', '；');
+                        for (int i = 0; i < options.Length; i++)
+                        {
+                            string option = options[i];
+
+                            if ((option == cmpStr)
+                                || (option == "空白" && cmpStr == "")
+                                || (option == "任意数"))
+                            {
+                                flag = true;
+                            }
+                            else
+                            {
+                                err++;
+                                dataRow.RowError += col.ColumnName + ";";
+                            }
+                        }
+                    }
+
                 }
             }
 
-            return true;
+            return err;
+        }
+
+        // -1：编号不一致；  0：相同；  >0：不相同的个数
+        private int CheckENodes(DataRow dataRow, DataRow baseRow, string enodes)
+        {
+            if (dataRow["ENBEquipment"].ToString() != enodes)
+                return -1;//enodes不一样就不用比了
+
+            return CheckAll(dataRow, baseRow);
         }
 
         //导入全网数据
@@ -220,26 +336,7 @@ namespace WindowsApplication1
                 return;
             }
 
-            DataSet ds = new DataSet();
-            foreach (DataTable baseTbl in qwBase.Tables)
-            {
-                if (baseTbl.Rows.Count < 1)
-                    continue;
-                DataRow baseRow = baseTbl.Rows[0];
-
-                DataTable cmpTable = qwDataSet.Tables[baseTbl.TableName];
-                if (cmpTable != null)
-                {
-                    DataTable dt = cmpTable.Clone();
-                    ds.Tables.Add(dt);
-                    for (int i = 0; i < cmpTable.Rows.Count; i++)
-                    {
-                        if (!CheckAll(cmpTable.Rows[i], baseRow))
-                            dt.ImportRow(cmpTable.Rows[i]);
-                    }
-                }
-
-            }
+            DataSet ds = CheckDataSet(qwBase, qwDataSet);
 
             //显示核查结果
             ShowDataSet("all", ds);
@@ -266,26 +363,7 @@ namespace WindowsApplication1
                 return;
             }
 
-            DataSet ds = new DataSet();
-            foreach (DataTable baseTbl in qwBase.Tables)
-            {
-                if (baseTbl.Rows.Count < 1)
-                    continue;
-                DataRow baseRow = baseTbl.Rows[0];
-
-                DataTable cmpTable = qwDataSet.Tables[baseTbl.TableName];
-                if (cmpTable != null)
-                {
-                    DataTable dt = cmpTable.Clone();
-                    ds.Tables.Add(dt);
-                    for (int i = 0; i < cmpTable.Rows.Count; i++)
-                    {
-                        if (!CheckENodes(cmpTable.Rows[i], baseRow, enodes))
-                            dt.ImportRow(cmpTable.Rows[i]);
-                    }
-                }
-
-            }
+            DataSet ds = CheckDataSet(qwBase, qwDataSet, enodes);
 
             //显示核查结果
             ShowDataSet("all", ds);
@@ -315,26 +393,7 @@ namespace WindowsApplication1
                 return;
             }
 
-            DataSet ds = new DataSet();
-            foreach (DataTable baseTbl in qhBase.Tables)
-            {
-                if (baseTbl.Rows.Count < 1)
-                    continue;
-                DataRow baseRow = baseTbl.Rows[0];
-
-                DataTable cmpTable = qhDataSet.Tables[baseTbl.TableName];
-                if (cmpTable != null)
-                {
-                    DataTable dt = baseTbl.Clone();
-                    ds.Tables.Add(dt);
-                    for (int i = 0; i < cmpTable.Rows.Count; i++)
-                    {
-                        if (!CheckAll(cmpTable.Rows[i], baseRow))
-                            dt.ImportRow(cmpTable.Rows[i]);
-                    }
-                }
-
-            }
+            DataSet ds = CheckDataSet(qhBase, qhDataSet);
 
             //显示核查结果
             ShowDataSet("handoff", ds);
@@ -364,26 +423,7 @@ namespace WindowsApplication1
                 return;
             }
 
-            DataSet ds = new DataSet();
-            foreach (DataTable baseTbl in slBase.Tables)
-            {
-                if (baseTbl.Rows.Count < 1)
-                    continue;
-                DataRow baseRow = baseTbl.Rows[0];
-
-                DataTable cmpTable = slDataSet.Tables[baseTbl.TableName];
-                if (cmpTable != null)
-                {
-                    DataTable dt = baseTbl.Clone();
-                    ds.Tables.Add(dt);
-                    for (int i = 0; i < cmpTable.Rows.Count; i++)
-                    {
-                        if (!CheckAll(cmpTable.Rows[i], baseRow))
-                            dt.ImportRow(cmpTable.Rows[i]);
-                    }
-                }
-
-            }
+            DataSet ds = CheckDataSet(slBase, slDataSet);
 
             //显示核查结果
             ShowDataSet("rate", ds);
@@ -393,12 +433,117 @@ namespace WindowsApplication1
         private void comboBoxEdit1_SelectedIndexChanged(object sender, EventArgs e)
         {
             string cn = comboBoxEdit1.Text;
-            DataSet ds = grids["all"].Tag as DataSet;
+            ChangeTable("all", cn);
 
-            (grids["all"].MainView as DevExpress.XtraGrid.Views.Grid.GridView).Columns.Clear(); 
-            grids["all"].DataSource = ds.Tables[cn];
-            grids["all"].RefreshDataSource();
-            grids["all"].MainView.RefreshData();
+            //DataSet ds = views["all"].Tag as DataSet;
+            //views["all"].Columns.Clear();
+            //views["all"].GridControl.DataSource = ds.Tables[cn];
+            //views["all"].RefreshData();
+        }
+
+        //切换优先列表
+        private void comboBoxEdit2_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            string cn = comboBoxEdit2.Text;
+            ChangeTable("handoff", cn);
+        }
+
+        //速率优先列表
+        private void comboBoxEdit3_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            string cn = comboBoxEdit3.Text;
+            ChangeTable("rate", cn);
+        }
+
+        private void gridView1_RowCellStyle(object sender, DevExpress.XtraGrid.Views.Grid.RowCellStyleEventArgs e)
+        {
+            //第一行  
+            if (e.RowHandle == 0)
+            {
+                e.Appearance.BackColor = Color.DeepSkyBlue;
+                //e.Appearance.BackColor2 = Color.LightCyan;
+            }
+            else
+            {
+                var gv = ((DevExpress.XtraGrid.Views.Base.ColumnView)(sender));
+                DataRow dr = gv.GetDataRow(e.RowHandle);
+                if (dr.RowError.Contains(e.Column.FieldName))//
+                {
+                    e.Appearance.BackColor = Color.Red;
+                }
+            }
+            ////单元格  
+            //if (e.RowHandle == 0 && e.Column.ColumnHandle == 0)
+            //{
+            //    e.Appearance.BackColor = Color.DeepSkyBlue;
+            //    e.Appearance.BackColor2 = Color.LightCyan;
+            //} 
+        }
+
+        void ExportToExcel(string page)
+        {
+            SaveFileDialog sfd = new SaveFileDialog();
+            if (sfd.ShowDialog() == DialogResult.OK)
+            {
+                views[page].ExportToXls(sfd.FileName);
+                XtraMessageBox.Show("导出成功！");
+            }
+        }
+
+        void ExportAllToExcel(string page)
+        {
+            FolderBrowserDialog fbd = new FolderBrowserDialog();
+            if (fbd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                DataSet ds = views[page].Tag as DataSet;
+                GridControl gc = new GridControl();
+                for (int i = 0; i < ds.Tables.Count; i++)
+                {
+                    DataTable dt = ds.Tables[i];
+                    string file = fbd.SelectedPath + "/" + dt.TableName + ".xls";
+
+                    gc.DataSource = dt;
+                    gc.ExportToXls(file);
+
+                }
+                XtraMessageBox.Show("导出成功！");
+            }
+        }
+
+        //基本参数导出Excel
+        private void simpleButton1_Click(object sender, EventArgs e)
+        {
+            ExportToExcel("all");
+        }
+
+        //基本参数导出所有
+        private void simpleButton2_Click(object sender, EventArgs e)
+        {
+            ExportAllToExcel("all");
+        }
+
+        //切换优先导出Excel
+        private void simpleButton5_Click(object sender, EventArgs e)
+        {
+            ExportToExcel("handoff");
+        }
+
+        //切换优先导出所有
+        private void simpleButton6_Click(object sender, EventArgs e)
+        {
+            ExportAllToExcel("handoff");
+        }
+
+        //速率优先导出Excel
+        private void simpleButton3_Click(object sender, EventArgs e)
+        {
+            ExportToExcel("rate");
+        }
+
+        //速率优先导出所有
+        private void simpleButton4_Click(object sender, EventArgs e)
+        {
+            ExportAllToExcel("rate");
         }
 
     }
