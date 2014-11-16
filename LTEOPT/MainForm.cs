@@ -157,7 +157,16 @@ namespace LTEOPT
 
                         for (int i = 0; i < cellCount; i++)
                         {
-                            dt.Columns.Add(cells[titleRowIndex, i].StringValue);
+                            string colname = cells[titleRowIndex, i].StringValue;
+                            if (string.IsNullOrEmpty(colname))
+                            {
+                                cellCount = i;
+                                break;
+                            }
+                            else
+                            {
+                                dt.Columns.Add(cells[titleRowIndex, i].StringValue);
+                            }
                         }
                         cells.ExportDataTable(dt, firstRowIndex, 0, rowCount - 1, false, true);
 

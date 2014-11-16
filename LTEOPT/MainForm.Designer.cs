@@ -390,7 +390,7 @@
             // 
             // mFile
             // 
-            this.mFile.Caption = "&File";
+            this.mFile.Caption = "文件(&F)";
             this.mFile.Id = 0;
             this.mFile.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] {
             new DevExpress.XtraBars.LinkPersistInfo(this.iNew),
@@ -657,6 +657,7 @@
             // 
             this.gridView2.GridControl = this.gridControl1;
             this.gridView2.Name = "gridView2";
+            this.gridView2.OptionsView.ColumnAutoWidth = false;
             this.gridView2.OptionsView.ShowGroupPanel = false;
             // 
             // layoutControlGroup2
@@ -812,6 +813,7 @@
             // 
             this.gridView3.GridControl = this.gridControl2;
             this.gridView3.Name = "gridView3";
+            this.gridView3.OptionsView.ColumnAutoWidth = false;
             this.gridView3.OptionsView.ShowGroupPanel = false;
             // 
             // layoutControlGroup3
