@@ -30,6 +30,9 @@ namespace LTEOPT
         DataSet slBase;//速率优先基准
         DataSet slDataSet;//速率优先数据
 
+        DataSet rlBase;//容量优先基准
+        DataSet rlDataSet;//容量优先数据
+
         public MainForm()
         {
             InitializeComponent();
@@ -44,14 +47,7 @@ namespace LTEOPT
 
             InitTab();
 
-            qwBase = new DataSet();
-            qwBase.ReadXml(data_path + man + "_qwBase.dat");
-
-            qhBase = new DataSet();
-            qhBase.ReadXml(data_path + man + "_qhBase.dat");
-
-            //slBase = new DataSet();
-            //slBase.ReadXml(data_path + man + "_slBase.dat");
+            ImportBase(man);
 
         }
 
@@ -61,6 +57,7 @@ namespace LTEOPT
             pages.Add("all", xtraTabPage1);
             pages.Add("handoff", xtraTabPage2);
             pages.Add("rate", xtraTabPage3);
+            pages.Add("capacity", xtraTabPage4);
 
             //grids = new Dictionary<string, GridControl>();
             //grids.Add("all", gridControl);
@@ -71,16 +68,19 @@ namespace LTEOPT
             views.Add("all", gridView1);
             views.Add("handoff", gridView2);
             views.Add("rate", gridView3);
+            views.Add("capacity", gridView4);
 
             combos = new Dictionary<string, ComboBoxEdit>();
             combos.Add("all", comboBoxEdit1);
             combos.Add("handoff", comboBoxEdit2);
             combos.Add("rate", comboBoxEdit3);
+            combos.Add("capacity", comboBoxEdit4);
 
             emptyitems = new Dictionary<string, DevExpress.XtraLayout.EmptySpaceItem>();
             emptyitems.Add("all", emptySpaceItem1);
             emptyitems.Add("handoff", emptySpaceItem2);
             emptyitems.Add("rate", emptySpaceItem3);
+            emptyitems.Add("capacity", emptySpaceItem4);
         }
 
         Dictionary<string, XtraTabPage> pages;
@@ -104,9 +104,9 @@ namespace LTEOPT
 
             //绑定数据源
             views[page].Tag = ds;
-            //views[page].Columns.Clear();
-            //views[page].GridControl.DataSource = ds.Tables[0];
-            //views[page].RefreshData();
+            views[page].Columns.Clear();
+            views[page].GridControl.DataSource = ds.Tables[0];
+            views[page].RefreshData();
 
             //显示统计结果
             emptyitems[page].Text = ds.DataSetName;
@@ -144,6 +144,30 @@ namespace LTEOPT
 
                 int titleRowIndex = 0;
                 int firstRowIndex = 1;
+
+                if (is_import_base)
+                {
+                    if (manufacturer == "huawei")
+                    {
+                        titleRowIndex = 1;
+                        firstRowIndex = 2;
+                    }
+                    //else { }//默认值
+                }
+                else
+                {
+                    if (manufacturer == "huawei")
+                    {
+                        titleRowIndex = 1;
+                        firstRowIndex = 2;
+                    }
+                    else if (manufacturer == "zte")
+                    {
+                        titleRowIndex = 0;
+                        firstRowIndex = 5;
+                    }
+                    //else { } //阿朗，默认值
+                }
 
                 foreach (Worksheet sheet in book.Worksheets)
                 {
@@ -189,18 +213,58 @@ namespace LTEOPT
             return ds;
         }
 
-        void ImportBase()
+        bool is_import_base = false;
+        void ImportBase(string man)
         {
-            string man = "huawei";
+            is_import_base = true;
+            //string man = "huawei";
 
-            qwBase = ExcelToDataSet(data_path + "LTE参数_20140702-基准.xlsx");
-            qwBase.WriteXml(data_path +man+ "_qwBase.dat", XmlWriteMode.WriteSchema);
+            string qwfile = "data/";//全网数据
+            string tsfile = "data/";//特殊场景
 
-            qhBase = ExcelToDataSet(data_path + "异厂家切换相关参数及功能开关-ALU-基准.xlsx");
-            qhBase.WriteXml(data_path + man + "_qhBase.dat", XmlWriteMode.WriteSchema);
+            navBarGroup1.Visible = false;
+            navBarGroup2.Visible = false;
+            navBarGroup3.Visible = false;
+            xtraTabPage2.PageVisible = false;
+            xtraTabPage3.PageVisible = false;
+            xtraTabPage4.PageVisible = false;
 
-            //slBase = ExcelToDataSet(data_path +"速率基准");
-            //slBase.WriteXml(data_path + man + "_slBase.dat", XmlWriteMode.WriteSchema);
+            //每个厂家对应一个特殊场景：切换优先-阿朗；容量优先-中兴；速率优先-华为
+            if (man == "huawei")
+            {
+                qwfile += "huawei_qw.xls";
+                tsfile += "huawei_sl.xls";
+
+                qwBase = ExcelToDataSet(qwfile);
+                slBase = ExcelToDataSet(tsfile);
+
+                navBarGroup2.Visible = true;
+                xtraTabPage3.PageVisible = true;
+            }
+            else if (man == "zte")
+            {
+                qwfile += "zte_qw.xlsm";
+                tsfile += "zte_rl.xlsm";
+
+                qwBase = ExcelToDataSet(qwfile);
+                rlBase = ExcelToDataSet(tsfile);
+
+                navBarGroup3.Visible = true;
+                xtraTabPage4.PageVisible = true;
+            }
+            else //if (man == "allu")
+            {
+                qwfile += "allu_qw.xlsx";
+                tsfile += "allu_qh.xlsx";
+
+                qwBase = ExcelToDataSet(qwfile);
+                qhBase = ExcelToDataSet(tsfile);
+
+                navBarGroup1.Visible = true;
+                xtraTabPage2.PageVisible = true;
+            }
+
+            is_import_base = false;
         }
 
         //检查DataSet
@@ -221,7 +285,7 @@ namespace LTEOPT
                 if (cmpTable != null)
                 {
                     DataTable dt = baseTbl.Copy();
-                    ds.Tables.Add(dt);
+                    
                     for (int i = 0; i < cmpTable.Rows.Count; i++)
                     {
                         int errcnt;
@@ -242,6 +306,11 @@ namespace LTEOPT
                         }
 
                     }
+
+                    if (dt.Rows.Count>1)
+                    {
+                        ds.Tables.Add(dt);
+                    }
                 }
 
                 totalRow += cmpTable.Rows.Count;
@@ -255,15 +324,21 @@ namespace LTEOPT
         //检查全部数据
         private int CheckAll(DataRow dataRow, DataRow baseRow)
         {
-            bool flag = false;
+            
             int err = 0;
             foreach (DataColumn col in baseRow.Table.Columns)
             {
+                bool flag = false;//表示字段是否有正确
                 if (col.ColumnName != "ENBEquipment" && dataRow[col.ColumnName] != null)
                 {
                     // TODO: 1.n选1  2.区间  3.整体匹配     1,3可以组合；区间内没有分号
                     string baseStr = baseRow[col.ColumnName].ToString();
                     string cmpStr = dataRow[col.ColumnName].ToString();
+                    if (baseStr == cmpStr)
+                    {
+                        //完全一样就不用比了
+                        continue;
+                    }
                     if (baseStr.Contains("]"))
                     {
                         string pattern = @"^\[(\d)[,，](\d)\]$";
@@ -297,12 +372,14 @@ namespace LTEOPT
                                 || (option == "任意数"))
                             {
                                 flag = true;
+                                break;
                             }
-                            else
-                            {
-                                err++;
-                                dataRow.RowError += col.ColumnName + ";";
-                            }
+                            
+                        }
+                        if (flag == false)
+                        {
+                            err++;
+                            dataRow.RowError += col.ColumnName + ";";
                         }
                     }
 
@@ -325,6 +402,7 @@ namespace LTEOPT
         private void inboxItem_LinkClicked(object sender, DevExpress.XtraNavBar.NavBarLinkEventArgs e)
         {
             OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Filter = "Excel（*.xls;*.xlsx;*.xlsm）|*.xls;*.xlsx;*.xlsm";
             if (ofd.ShowDialog() == DialogResult.OK)
             {
                 string xls = ofd.FileName;
@@ -356,14 +434,20 @@ namespace LTEOPT
         private void navBarItem5_LinkClicked(object sender, DevExpress.XtraNavBar.NavBarLinkEventArgs e)
         {
             // 获取需要核查的eNodeB
-            if (string.IsNullOrEmpty(comboBoxEdit1.Text))
+            InputForm inputform = new InputForm();
+            if (inputform.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+            {
+                return;
+            }
+
+            string enodes = comboBoxEdit1.Text;
+
+            if (string.IsNullOrEmpty(enodes))
             {
                 XtraMessageBox.Show("请输入eNodes！",
                     "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-            string enodes = comboBoxEdit1.Text;
-
 
             if (qwBase == null || qwDataSet == null)
             {
@@ -382,6 +466,7 @@ namespace LTEOPT
         private void navBarItem1_LinkClicked(object sender, DevExpress.XtraNavBar.NavBarLinkEventArgs e)
         {
             OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Filter = "Excel（*.xls;*.xlsx;*.xlsm）|*.xls;*.xlsx;*.xlsm";
             if (ofd.ShowDialog() == DialogResult.OK)
             {
                 string xls = ofd.FileName;
@@ -412,13 +497,14 @@ namespace LTEOPT
         private void navBarItem3_LinkClicked(object sender, DevExpress.XtraNavBar.NavBarLinkEventArgs e)
         {
             OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Filter = "Excel（*.xls;*.xlsx;*.xlsm）|*.xls;*.xlsx;*.xlsm";
             if (ofd.ShowDialog() == DialogResult.OK)
             {
                 string xls = ofd.FileName;
                 slDataSet = ExcelToDataSet(xls);
 
                 //把结果显示在tab页中
-                ShowDataSet("rate", qhDataSet);
+                ShowDataSet("rate", slDataSet);
             }
         }
 
@@ -436,6 +522,37 @@ namespace LTEOPT
 
             //显示核查结果
             ShowDataSet("rate", ds);
+        }
+
+        //导入容量优先数据
+        private void navBarItem6_LinkClicked(object sender, DevExpress.XtraNavBar.NavBarLinkEventArgs e)
+        {
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Filter = "Excel（*.xls;*.xlsx;*.xlsm）|*.xls;*.xlsx;*.xlsm";
+            if (ofd.ShowDialog() == DialogResult.OK)
+            {
+                string xls = ofd.FileName;
+                rlDataSet = ExcelToDataSet(xls);
+
+                //把结果显示在tab页中
+                ShowDataSet("capacity", rlDataSet);
+            }
+        }
+
+        //容量优先核查
+        private void navBarItem7_LinkClicked(object sender, DevExpress.XtraNavBar.NavBarLinkEventArgs e)
+        {
+            if (rlDataSet == null || rlBase == null)
+            {
+                XtraMessageBox.Show("请导入容量优先场景数据！",
+                     "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            DataSet ds = CheckDataSet(rlBase, rlDataSet);
+
+            //显示核查结果
+            ShowDataSet("capacity", ds);
         }
 
         //全网列表
@@ -462,6 +579,13 @@ namespace LTEOPT
         {
             string cn = comboBoxEdit3.Text;
             ChangeTable("rate", cn);
+        }
+
+        //容量优先列表
+        private void comboBoxEdit4_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            string cn = comboBoxEdit4.Text;
+            ChangeTable("capacity", cn);
         }
 
         private void gridView1_RowCellStyle(object sender, DevExpress.XtraGrid.Views.Grid.RowCellStyleEventArgs e)
@@ -492,6 +616,7 @@ namespace LTEOPT
         void ExportToExcel(string page)
         {
             SaveFileDialog sfd = new SaveFileDialog();
+            sfd.Filter = "Excel（*.xls）|*.xls";
             if (sfd.ShowDialog() == DialogResult.OK)
             {
                 views[page].ExportToXls(sfd.FileName);
@@ -554,6 +679,22 @@ namespace LTEOPT
         {
             ExportAllToExcel("rate");
         }
+
+        //容量优先导出Excel
+        private void simpleButton7_Click(object sender, EventArgs e)
+        {
+            ExportToExcel("capacity");
+        }
+
+        //容量优先导出所有
+        private void simpleButton8_Click(object sender, EventArgs e)
+        {
+            ExportAllToExcel("capacity");
+        }
+
+
+
+       
 
     }
 }

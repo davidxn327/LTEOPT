@@ -9,35 +9,21 @@ using DevExpress.XtraEditors;
 
 namespace LTEOPT
 {
-    public partial class LoginForm : DevExpress.XtraEditors.XtraForm
+    public partial class InputForm : DevExpress.XtraEditors.XtraForm
     {
-        public string manufacturer = "huawei";
-
-        public LoginForm()
+        public InputForm()
         {
             InitializeComponent();
         }
 
-        //登录
+        public string enode;
+
         private void simpleButton1_Click(object sender, EventArgs e)
         {
-            if (comboBoxEdit2.Text == "中兴")
-            {
-                manufacturer = "zte";
-            }
-            else if (comboBoxEdit2.Text == "朗讯")
-            {
-                manufacturer = "allu";
-            }
-            //else
-            //{
-            //    manufacturer = "huawei";
-            //}
-
+            enode = textEdit1.Text;
             this.DialogResult = System.Windows.Forms.DialogResult.OK;
         }
 
-        //退出，取消
         private void simpleButton2_Click(object sender, EventArgs e)
         {
             this.DialogResult = System.Windows.Forms.DialogResult.Cancel;
