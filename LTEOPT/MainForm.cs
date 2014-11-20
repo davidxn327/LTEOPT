@@ -89,6 +89,8 @@ namespace LTEOPT
         Dictionary<string, ComboBoxEdit> combos;
         Dictionary<string, DevExpress.XtraLayout.EmptySpaceItem> emptyitems;
 
+        string enodeField;
+
         //切换Tab页面
         void SwitchPage(string page)
         {
@@ -99,14 +101,11 @@ namespace LTEOPT
         //tab页面显示数据
         void ShowDataSet(string page, DataSet ds)
         {
-            if (ds == null || ds.Tables.Count == 0)
+            if (ds == null )//|| ds.Tables.Count == 0)//结果可能没有数据表
                 return;
 
             //绑定数据源
             views[page].Tag = ds;
-            views[page].Columns.Clear();
-            views[page].GridControl.DataSource = ds.Tables[0];
-            views[page].RefreshData();
 
             //显示统计结果
             emptyitems[page].Text = ds.DataSetName;
@@ -118,7 +117,19 @@ namespace LTEOPT
                 combos[page].Properties.Items.Add(item.TableName);
             }
             //string firstTableName = ds.Tables[0].TableName;
-            combos[page].SelectedIndex = 0;
+            if (ds.Tables.Count == 0)
+            {
+                views[page].Columns.Clear();
+                views[page].GridControl.DataSource = null;// ds.Tables[0];
+                views[page].RefreshData();
+
+                combos[page].SelectedIndex = -1;
+            }
+            else
+            {
+                combos[page].SelectedIndex = -1;
+                combos[page].SelectedIndex = 0;
+            }
 
             //切换页面
             xtraTabControl1.SelectedTabPage = pages[page];
@@ -171,11 +182,16 @@ namespace LTEOPT
 
                 foreach (Worksheet sheet in book.Worksheets)
                 {
+                    if (!sheet.IsVisible)
+                    {
+                        continue;
+                    }
+
                     Cells cells = sheet.Cells;
                     int rowCount = cells.MaxDataRow + 1;
                     int cellCount = cells.MaxDataColumn + 1;
 
-                    if (rowCount > 1)
+                    if (rowCount >= firstRowIndex + 1)
                     {
                         DataTable dt = new DataTable(sheet.Name);
 
@@ -192,7 +208,8 @@ namespace LTEOPT
                                 dt.Columns.Add(cells[titleRowIndex, i].StringValue);
                             }
                         }
-                        cells.ExportDataTable(dt, firstRowIndex, 0, rowCount - 1, false, true);
+
+                        cells.ExportDataTable(dt, firstRowIndex, 0, rowCount - firstRowIndex, false, true);
 
                         //cells.ExportDataTable(dt, 0, 0, rowCount, true, true);
 
@@ -240,6 +257,8 @@ namespace LTEOPT
 
                 navBarGroup2.Visible = true;
                 xtraTabPage3.PageVisible = true;
+
+                enodeField = "*eNodeB名称";
             }
             else if (man == "zte")
             {
@@ -251,6 +270,8 @@ namespace LTEOPT
 
                 navBarGroup3.Visible = true;
                 xtraTabPage4.PageVisible = true;
+
+                enodeField = "MEID";
             }
             else //if (man == "allu")
             {
@@ -262,6 +283,8 @@ namespace LTEOPT
 
                 navBarGroup1.Visible = true;
                 xtraTabPage2.PageVisible = true;
+
+                enodeField = "ENBEquipment";
             }
 
             is_import_base = false;
@@ -281,6 +304,11 @@ namespace LTEOPT
                     continue;
 
                 DataRow baseRow = baseTbl.Rows[0];
+                if (single != null && baseTbl.Columns.Contains(enodeField))
+                {
+                    baseRow[enodeField] = single;
+                }
+
                 DataTable cmpTable = cmp_ds.Tables[baseTbl.TableName];
                 if (cmpTable != null)
                 {
@@ -329,7 +357,7 @@ namespace LTEOPT
             foreach (DataColumn col in baseRow.Table.Columns)
             {
                 bool flag = false;//表示字段是否有正确
-                if (col.ColumnName != "ENBEquipment" && dataRow[col.ColumnName] != null)
+                if (col.ColumnName != enodeField && dataRow[col.ColumnName] != null)
                 {
                     // TODO: 1.n选1  2.区间  3.整体匹配     1,3可以组合；区间内没有分号
                     string baseStr = baseRow[col.ColumnName].ToString();
@@ -341,7 +369,7 @@ namespace LTEOPT
                     }
                     if (baseStr.Contains("]"))
                     {
-                        string pattern = @"^\[(\d)[,，](\d)\]$";
+                        string pattern = @"^\[(\d+)[,，](\d+)\]$";
                         System.Text.RegularExpressions.Regex reg = new System.Text.RegularExpressions.Regex(pattern);
                         var match = reg.Match(baseStr);
                         if (match.Success)
@@ -392,7 +420,7 @@ namespace LTEOPT
         // -1：编号不一致；  0：相同；  >0：不相同的个数
         private int CheckENodes(DataRow dataRow, DataRow baseRow, string enodes)
         {
-            if (dataRow["ENBEquipment"].ToString() != enodes)
+            if (dataRow[enodeField].ToString() != enodes)
                 return -1;//enodes不一样就不用比了
 
             return CheckAll(dataRow, baseRow);
@@ -435,12 +463,13 @@ namespace LTEOPT
         {
             // 获取需要核查的eNodeB
             InputForm inputform = new InputForm();
+            inputform.Text = "请输入" + enodeField;
             if (inputform.ShowDialog() != System.Windows.Forms.DialogResult.OK)
             {
                 return;
             }
 
-            string enodes = comboBoxEdit1.Text;
+            string enodes = inputform.enode;
 
             if (string.IsNullOrEmpty(enodes))
             {

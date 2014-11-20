@@ -17,9 +17,9 @@ namespace LTEOPT
             Application.SetCompatibleTextRenderingDefault(false);
 
             DevExpress.Skins.SkinManager.EnableFormSkins();
-            DevExpress.UserSkins.OfficeSkins.Register();
+            //DevExpress.UserSkins.OfficeSkins.Register();
             DevExpress.UserSkins.BonusSkins.Register();
-            UserLookAndFeel.Default.SetSkinStyle("DevExpress Style");
+            UserLookAndFeel.Default.SetSkinStyle("Money Twins");
 
             LoginForm login = new LoginForm();
             if (login.ShowDialog() == DialogResult.OK)
