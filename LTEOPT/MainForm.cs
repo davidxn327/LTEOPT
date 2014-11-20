@@ -209,8 +209,15 @@ namespace LTEOPT
                             }
                         }
 
-                        cells.ExportDataTable(dt, firstRowIndex, 0, rowCount - firstRowIndex, false, true);
-
+                        try
+                        {
+                            cells.ExportDataTable(dt, firstRowIndex, 0, rowCount - firstRowIndex, false, true);
+                        }
+                        catch
+                        { 
+                            //do nothing
+                            continue;
+                        }
                         //cells.ExportDataTable(dt, 0, 0, rowCount, true, true);
 
                         ds.Tables.Add(dt);
@@ -236,6 +243,8 @@ namespace LTEOPT
             is_import_base = true;
             //string man = "huawei";
 
+            string project_name = "LTE调度参数优化工具";
+
             string qwfile = "data/";//全网数据
             string tsfile = "data/";//特殊场景
 
@@ -259,6 +268,7 @@ namespace LTEOPT
                 xtraTabPage3.PageVisible = true;
 
                 enodeField = "*eNodeB名称";
+                this.Text = project_name + " - 华为";
             }
             else if (man == "zte")
             {
@@ -272,6 +282,7 @@ namespace LTEOPT
                 xtraTabPage4.PageVisible = true;
 
                 enodeField = "MEID";
+                this.Text = project_name + " - 中兴";
             }
             else //if (man == "allu")
             {
@@ -285,6 +296,7 @@ namespace LTEOPT
                 xtraTabPage2.PageVisible = true;
 
                 enodeField = "ENBEquipment";
+                this.Text = project_name + " - 阿尔卡特朗讯";
             }
 
             is_import_base = false;

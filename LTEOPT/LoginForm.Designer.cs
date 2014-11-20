@@ -85,6 +85,7 @@
             // 
             // simpleButton2
             // 
+            this.simpleButton2.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.simpleButton2.Location = new System.Drawing.Point(156, 182);
             this.simpleButton2.Name = "simpleButton2";
             this.simpleButton2.Size = new System.Drawing.Size(75, 23);
@@ -109,7 +110,7 @@
             this.comboBoxEdit2.Properties.Items.AddRange(new object[] {
             "华为",
             "中兴",
-            "朗讯"});
+            "阿朗"});
             this.comboBoxEdit2.Properties.NullText = "华为";
             this.comboBoxEdit2.Properties.TextEditStyle = DevExpress.XtraEditors.Controls.TextEditStyles.DisableTextEditor;
             this.comboBoxEdit2.Size = new System.Drawing.Size(123, 21);
@@ -117,8 +118,10 @@
             // 
             // LoginForm
             // 
+            this.AcceptButton = this.simpleButton1;
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 14F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.CancelButton = this.simpleButton2;
             this.ClientSize = new System.Drawing.Size(284, 262);
             this.Controls.Add(this.simpleButton2);
             this.Controls.Add(this.simpleButton1);

@@ -16,16 +16,24 @@ namespace LTEOPT
         public LoginForm()
         {
             InitializeComponent();
+
+            this.Text = "LTE调度参数优化工具";
         }
 
         //登录
         private void simpleButton1_Click(object sender, EventArgs e)
         {
+            if (comboBoxEdit1.Text != "cszhangm" || textEdit1.Text != "123456")
+            {
+                XtraMessageBox.Show("用户名或密码错误！", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             if (comboBoxEdit2.Text == "中兴")
             {
                 manufacturer = "zte";
             }
-            else if (comboBoxEdit2.Text == "朗讯")
+            else if (comboBoxEdit2.Text == "阿朗")
             {
                 manufacturer = "allu";
             }
